@@ -243,6 +243,21 @@ class TestModel:
         assert isinstance(message2.role, MessageRole)
         assert message2.role == MessageRole.ASSISTANT
 
+    def test_chatmessage_from_dict_does_not_mutate_input(self):
+        tool_call_data = {
+            "id": "call_0",
+            "type": "function",
+            "function": {"name": "get_weather", "arguments": {"location": "Paris"}},
+        }
+        message_data = {"role": "assistant", "content": None, "tool_calls": [tool_call_data]}
+        message = ChatMessage.from_dict(message_data)
+        assert message_data["tool_calls"] == [tool_call_data]
+        assert isinstance(message.tool_calls[0], ChatMessageToolCall)
+        assert message.tool_calls[0].function.name == "get_weather"
+        # The same dict can be converted again
+        message2 = ChatMessage.from_dict(message_data)
+        assert message2 == message
+
     @pytest.mark.skipif(not sys.platform.startswith("darwin"), reason="requires macOS")
     def test_get_mlx_message_no_tool(self):
         model = MLXModel(model_id="HuggingFaceTB/SmolLM2-135M-Instruct", max_tokens=10)
